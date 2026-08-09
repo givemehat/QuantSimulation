@@ -2,6 +2,7 @@
 Machine Learning strategy: Random Forest + XGBoost with walk-forward validation.
 Proper time-series train/val/test split — NO random shuffling.
 """
+
 import logging
 import warnings
 import numpy as np
@@ -11,8 +12,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.pipeline import Pipeline
+
 try:
     from xgboost import XGBClassifier
+
     HAS_XGB = True
 except ImportError:
     HAS_XGB = False
@@ -29,13 +32,14 @@ class MLStrategy:
     Target: whether price is higher in `horizon` bars → long signal.
     Uses walk-forward validation to avoid data leakage.
     """
+
     name = "ML Strategy"
 
     def __init__(
         self,
-        model_type: str = "random_forest",   # "random_forest", "xgboost", "logistic"
+        model_type: str = "random_forest",  # "random_forest", "xgboost", "logistic"
         horizon: int = 5,
-        threshold: float = 0.55,              # confidence threshold to trade
+        threshold: float = 0.55,  # confidence threshold to trade
         walk_forward_windows: int = 5,
     ):
         self.model_type = model_type
@@ -51,17 +55,26 @@ class MLStrategy:
     def _build_model(self):
         if self.model_type == "xgboost" and HAS_XGB:
             return XGBClassifier(
-                n_estimators=200, max_depth=4, learning_rate=0.05,
-                subsample=0.8, colsample_bytree=0.8,
-                use_label_encoder=False, eval_metric="logloss",
-                random_state=42, verbosity=0
+                n_estimators=200,
+                max_depth=4,
+                learning_rate=0.05,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                use_label_encoder=False,
+                eval_metric="logloss",
+                random_state=42,
+                verbosity=0,
             )
         elif self.model_type == "logistic":
             return LogisticRegression(max_iter=1000, C=1.0, random_state=42)
         else:
             return RandomForestClassifier(
-                n_estimators=200, max_depth=6, min_samples_leaf=20,
-                max_features="sqrt", random_state=42, n_jobs=-1
+                n_estimators=200,
+                max_depth=6,
+                min_samples_leaf=20,
+                max_features="sqrt",
+                random_state=42,
+                n_jobs=-1,
             )
 
     def fit(self, feature_df: pd.DataFrame) -> dict:
@@ -77,7 +90,9 @@ class MLStrategy:
         window_size = n // (self.walk_forward_windows + 1)
 
         fold_metrics = []
-        logger.info(f"Walk-forward training: {self.walk_forward_windows} folds, model={self.model_type}")
+        logger.info(
+            f"Walk-forward training: {self.walk_forward_windows} folds, model={self.model_type}"
+        )
 
         for fold in range(self.walk_forward_windows):
             train_end = window_size * (fold + 1)
@@ -147,7 +162,7 @@ class MLStrategy:
         X_scaled = self.scaler.transform(X)
 
         proba = self.model.predict_proba(X_scaled)
-        long_prob = proba[:, 1]   # probability of upward move
+        long_prob = proba[:, 1]  # probability of upward move
         short_prob = proba[:, 0]  # probability of downward move
 
         signals = pd.Series(0, index=feature_df.index)
@@ -156,7 +171,9 @@ class MLStrategy:
 
         # Shift by 1 to avoid lookahead
         signals = signals.shift(1).fillna(0)
-        logger.info(f"[{self.name}] Long: {(signals==1).sum()}, Short: {(signals==-1).sum()}, Flat: {(signals==0).sum()}")
+        logger.info(
+            f"[{self.name}] Long: {(signals==1).sum()}, Short: {(signals==-1).sum()}, Flat: {(signals==0).sum()}"
+        )
         return signals
 
     def get_prediction_df(self, feature_df: pd.DataFrame) -> pd.DataFrame:
@@ -168,8 +185,11 @@ class MLStrategy:
         X_scaled = self.scaler.transform(X)
         proba = self.model.predict_proba(X_scaled)
 
-        return pd.DataFrame({
-            "long_prob": proba[:, 1],
-            "short_prob": proba[:, 0],
-            "signal": self.generate_signals(feature_df).values,
-        }, index=feature_df.index)
+        return pd.DataFrame(
+            {
+                "long_prob": proba[:, 1],
+                "short_prob": proba[:, 0],
+                "signal": self.generate_signals(feature_df).values,
+            },
+            index=feature_df.index,
+        )

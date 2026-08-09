@@ -1,6 +1,7 @@
 """
 Portfolio accounting: tracks cash, positions, PnL, and trade ledger.
 """
+
 import logging
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
@@ -34,7 +35,7 @@ class Position:
 class Trade:
     date: pd.Timestamp
     ticker: str
-    side: str          # "BUY" or "SELL"
+    side: str  # "BUY" or "SELL"
     quantity: float
     price: float
     commission: float
@@ -87,13 +88,15 @@ class Portfolio:
         self._peak_equity = max(self._peak_equity, equity)
         drawdown = (equity - self._peak_equity) / (self._peak_equity + 1e-9)
 
-        self.equity_curve.append({
-            "date": date,
-            "equity": equity,
-            "cash": self.cash,
-            "positions_value": pos_value,
-            "drawdown": drawdown,
-        })
+        self.equity_curve.append(
+            {
+                "date": date,
+                "equity": equity,
+                "cash": self.cash,
+                "positions_value": pos_value,
+                "drawdown": drawdown,
+            }
+        )
         return equity
 
     def buy(
@@ -133,13 +136,18 @@ class Portfolio:
         self.positions[ticker] = pos
 
         trade = Trade(
-            date=date, ticker=ticker, side="BUY",
-            quantity=quantity, price=exec_price,
+            date=date,
+            ticker=ticker,
+            side="BUY",
+            quantity=quantity,
+            price=exec_price,
             commission=commission,
             slippage=quantity * price * self.slippage_bps,
         )
         self.trades.append(trade)
-        logger.debug(f"BUY {quantity:.0f} {ticker} @ {exec_price:.2f} | cash={self.cash:.0f}")
+        logger.debug(
+            f"BUY {quantity:.0f} {ticker} @ {exec_price:.2f} | cash={self.cash:.0f}"
+        )
         return trade
 
     def sell(
@@ -168,14 +176,19 @@ class Portfolio:
             del self.positions[ticker]
 
         trade = Trade(
-            date=date, ticker=ticker, side="SELL",
-            quantity=quantity, price=exec_price,
+            date=date,
+            ticker=ticker,
+            side="SELL",
+            quantity=quantity,
+            price=exec_price,
             commission=commission,
             slippage=quantity * price * self.slippage_bps,
             pnl=pnl,
         )
         self.trades.append(trade)
-        logger.debug(f"SELL {quantity:.0f} {ticker} @ {exec_price:.2f} | PnL={pnl:.2f} | cash={self.cash:.0f}")
+        logger.debug(
+            f"SELL {quantity:.0f} {ticker} @ {exec_price:.2f} | PnL={pnl:.2f} | cash={self.cash:.0f}"
+        )
         return trade
 
     def close_all(self, date: pd.Timestamp, prices: Dict[str, float]):
@@ -193,16 +206,19 @@ class Portfolio:
     def get_trades_df(self) -> pd.DataFrame:
         if not self.trades:
             return pd.DataFrame()
-        rows = [{
-            "Date": t.date,
-            "Ticker": t.ticker,
-            "Side": t.side,
-            "Quantity": t.quantity,
-            "Price": t.price,
-            "Commission": t.commission,
-            "Slippage": t.slippage,
-            "PnL": t.pnl,
-        } for t in self.trades]
+        rows = [
+            {
+                "Date": t.date,
+                "Ticker": t.ticker,
+                "Side": t.side,
+                "Quantity": t.quantity,
+                "Price": t.price,
+                "Commission": t.commission,
+                "Slippage": t.slippage,
+                "PnL": t.pnl,
+            }
+            for t in self.trades
+        ]
         return pd.DataFrame(rows)
 
     def reset(self):

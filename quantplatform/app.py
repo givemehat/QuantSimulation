@@ -2,12 +2,15 @@
 QuantTerminal — AI-Driven Quantitative Trading Platform
 Production-grade Streamlit dashboard.
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import logging
 import warnings
+
 warnings.filterwarnings("ignore")
 logging.basicConfig(level=logging.INFO)
 
@@ -23,9 +26,13 @@ from strategies.rule_based import STRATEGY_REGISTRY, MovingAverageCrossover
 from strategies.ml_strategy import MLStrategy
 from backtesting.engine import run_backtest
 from analytics.charts import (
-    plot_equity_curve, plot_price_with_signals,
-    plot_returns_distribution, plot_monthly_returns_heatmap,
-    plot_feature_importance, plot_rolling_sharpe, plot_ml_probability,
+    plot_equity_curve,
+    plot_price_with_signals,
+    plot_returns_distribution,
+    plot_monthly_returns_heatmap,
+    plot_feature_importance,
+    plot_rolling_sharpe,
+    plot_ml_probability,
 )
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -37,7 +44,8 @@ st.set_page_config(
 )
 
 # ── Custom CSS ────────────────────────────────────────────────────────────────
-st.markdown("""
+st.markdown(
+    """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 
@@ -216,7 +224,10 @@ summary { font-family: var(--font-mono) !important; font-size: 11px !important; 
 /* Dataframe */
 .dataframe { font-family: var(--font-mono) !important; font-size: 11px !important; }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DEMO MODE DETECTION
@@ -225,29 +236,41 @@ summary { font-family: var(--font-mono) !important; font-size: 11px !important; 
 def _check_live_data() -> bool:
     try:
         import yfinance as yf
+
         t = yf.download("SPY", period="5d", progress=False)
         return not t.empty
     except Exception:
         return False
 
+
 LIVE_DATA = _check_live_data()
 if not LIVE_DATA:
-    st.markdown("""
+    st.markdown(
+        """
     <div style="background:rgba(255,211,61,0.08);border:1px solid rgba(255,211,61,0.3);
     border-radius:8px;padding:10px 16px;margin-bottom:12px;
     font-family:'IBM Plex Mono';font-size:11px;color:#ffd93d;letter-spacing:0.04em;">
     ⚡ DEMO MODE — Synthetic GBM price data active.
     All strategies, risk controls and analytics fully functional.
-    </div>""", unsafe_allow_html=True)
+    </div>""",
+        unsafe_allow_html=True,
+    )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SIDEBAR
 # ─────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown('<div class="brand-header">⬡ QUANT TERMINAL</div>', unsafe_allow_html=True)
-    st.markdown('<div class="brand-sub">Strategy Research Platform</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="brand-header">⬡ QUANT TERMINAL</div>', unsafe_allow_html=True
+    )
+    st.markdown(
+        '<div class="brand-sub">Strategy Research Platform</div>',
+        unsafe_allow_html=True,
+    )
 
-    st.markdown('<div class="section-label">📡 Data Configuration</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-label">📡 Data Configuration</div>', unsafe_allow_html=True
+    )
     ticker = st.text_input("Ticker Symbol", value="AAPL").upper().strip()
     benchmark_ticker = st.text_input("Benchmark", value="SPY").upper().strip()
 
@@ -257,7 +280,9 @@ with st.sidebar:
     with col2:
         end_date = st.date_input("End", value=pd.to_datetime("2024-12-31"))
 
-    st.markdown('<div class="section-label">⚡ Strategy Engine</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-label">⚡ Strategy Engine</div>', unsafe_allow_html=True
+    )
     strategy_mode = st.selectbox(
         "Strategy Type",
         ["Rule-Based", "ML Strategy"],
@@ -284,8 +309,12 @@ with st.sidebar:
         ml_threshold = st.slider("Signal Threshold", 0.50, 0.80, 0.55, step=0.01)
         ml_horizon = st.slider("Prediction Horizon (days)", 1, 20, 5)
 
-    st.markdown('<div class="section-label">🛡 Risk Controls</div>', unsafe_allow_html=True)
-    initial_capital = st.number_input("Initial Capital ($)", 10_000, 10_000_000, 100_000, step=10_000)
+    st.markdown(
+        '<div class="section-label">🛡 Risk Controls</div>', unsafe_allow_html=True
+    )
+    initial_capital = st.number_input(
+        "Initial Capital ($)", 10_000, 10_000_000, 100_000, step=10_000
+    )
     max_pos_pct = st.slider("Max Position Size (%)", 5, 50, 20) / 100
     stop_loss = st.slider("Stop Loss (%)", 1, 20, 5) / 100
     take_profit = st.slider("Take Profit (%)", 5, 50, 15) / 100
@@ -298,7 +327,8 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN CONTENT
 # ─────────────────────────────────────────────────────────────────────────────
-st.markdown(f"""
+st.markdown(
+    f"""
 <div style="display:flex; align-items:center; margin-bottom:4px;">
     <span style="font-family:'IBM Plex Mono';font-size:26px;font-weight:600;color:#e6edf3;">{ticker}</span>
     <span class="status-badge">LIVE SIM</span>
@@ -306,7 +336,9 @@ st.markdown(f"""
 <div style="font-family:'IBM Plex Mono';font-size:11px;color:#8b949e;margin-bottom:20px;">
     {strategy_mode} &nbsp;·&nbsp; {start_date} → {end_date} &nbsp;·&nbsp; Capital: ${initial_capital:,}
 </div>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SESSION STATE
@@ -349,12 +381,19 @@ if run_btn:
                     strategy = MovingAverageCrossover(fast=fast_ma, slow=slow_ma)
                 elif strategy_name == "Momentum":
                     from strategies.rule_based import MomentumStrategy
-                    strategy = MomentumStrategy(lookback=lookback, vol_filter=vol_filter)
+
+                    strategy = MomentumStrategy(
+                        lookback=lookback, vol_filter=vol_filter
+                    )
                 elif strategy_name == "Mean Reversion":
                     from strategies.rule_based import MeanReversionStrategy
-                    strategy = MeanReversionStrategy(bb_window=bb_window, rsi_oversold=rsi_os, rsi_overbought=rsi_ob)
+
+                    strategy = MeanReversionStrategy(
+                        bb_window=bb_window, rsi_oversold=rsi_os, rsi_overbought=rsi_ob
+                    )
                 elif strategy_name == "Breakout":
                     from strategies.rule_based import BreakoutStrategy
+
                     strategy = BreakoutStrategy(window=break_window)
 
                 signals = strategy.generate_signals(df)
@@ -394,6 +433,7 @@ if run_btn:
         except Exception as e:
             st.error(f"❌ Backtest error: {e}")
             import traceback
+
             st.code(traceback.format_exc())
             st.stop()
 
@@ -411,18 +451,25 @@ if result is not None and df is not None:
         color_cls = ""
         if "%" in str(value):
             try:
-                v = float(str(value).replace("%","").replace(",",""))
-                if v > 0: color_cls = "green"
-                elif v < 0: color_cls = "red"
-            except: pass
+                v = float(str(value).replace("%", "").replace(",", ""))
+                if v > 0:
+                    color_cls = "green"
+                elif v < 0:
+                    color_cls = "red"
+            except:
+                pass
         return f"""
         <div class="kpi-card {cls}">
             <div class="kpi-label">{label}</div>
             <div class="kpi-value {color_cls}">{value}</div>
         </div>"""
 
-    st.markdown('<div class="section-label">📊 Performance Summary</div>', unsafe_allow_html=True)
-    st.markdown(f"""
+    st.markdown(
+        '<div class="section-label">📊 Performance Summary</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"""
     <div class="kpi-grid">
         {kpi_card("Total Return", m.get("Total Return", "—"))}
         {kpi_card("CAGR", m.get("CAGR", "—"))}
@@ -433,39 +480,55 @@ if result is not None and df is not None:
         {kpi_card("Profit Factor", m.get("Profit Factor", "—"), "neutral")}
         {kpi_card("Num Trades", m.get("Num Trades", "—"), "neutral")}
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # ── TABS ───────────────────────────────────────────────────────────────
-    tabs = st.tabs([
-        "📈 Equity Curve",
-        "🕯 Price & Signals",
-        "📉 Drawdown & Risk",
-        "📅 Monthly Returns",
-        "🔄 Trade Ledger",
-        "🤖 ML Insights",
-    ])
+    tabs = st.tabs(
+        [
+            "📈 Equity Curve",
+            "🕯 Price & Signals",
+            "📉 Drawdown & Risk",
+            "📅 Monthly Returns",
+            "🔄 Trade Ledger",
+            "🤖 ML Insights",
+        ]
+    )
 
     equity_df = result.equity_df
     signals = result.signals
     bench_df = st.session_state.benchmark_df
 
     with tabs[0]:
-        st.markdown('<div class="section-label">Equity Curve vs Benchmark</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-label">Equity Curve vs Benchmark</div>',
+            unsafe_allow_html=True,
+        )
         fig_eq = plot_equity_curve(equity_df, bench_df, initial_capital)
         st.plotly_chart(fig_eq, use_container_width=True)
 
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown('<div class="section-label">Return Distribution</div>', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="section-label">Return Distribution</div>',
+                unsafe_allow_html=True,
+            )
             fig_dist = plot_returns_distribution(equity_df)
             st.plotly_chart(fig_dist, use_container_width=True)
         with col2:
-            st.markdown('<div class="section-label">Rolling Sharpe Ratio</div>', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="section-label">Rolling Sharpe Ratio</div>',
+                unsafe_allow_html=True,
+            )
             fig_sharpe = plot_rolling_sharpe(equity_df)
             st.plotly_chart(fig_sharpe, use_container_width=True)
 
     with tabs[1]:
-        st.markdown('<div class="section-label">Price Chart with Entry/Exit Signals</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-label">Price Chart with Entry/Exit Signals</div>',
+            unsafe_allow_html=True,
+        )
         # Show last 252 bars for readability
         display_df = df.tail(252)
         display_sig = signals.reindex(display_df.index).fillna(0)
@@ -473,17 +536,24 @@ if result is not None and df is not None:
         st.plotly_chart(fig_price, use_container_width=True)
 
     with tabs[2]:
-        st.markdown('<div class="section-label">Drawdown Analysis</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-label">Drawdown Analysis</div>', unsafe_allow_html=True
+        )
         dd = equity_df["drawdown"] * 100
         fig_dd = go.Figure()
-        fig_dd.add_trace(go.Scatter(
-            x=equity_df.index, y=dd,
-            fill="tozeroy", fillcolor="rgba(255,107,107,0.15)",
-            line=dict(color="#ff6b6b", width=1.5),
-            name="Drawdown %",
-        ))
+        fig_dd.add_trace(
+            go.Scatter(
+                x=equity_df.index,
+                y=dd,
+                fill="tozeroy",
+                fillcolor="rgba(255,107,107,0.15)",
+                line=dict(color="#ff6b6b", width=1.5),
+                name="Drawdown %",
+            )
+        )
         fig_dd.update_layout(
-            paper_bgcolor="#0d1117", plot_bgcolor="#0d1117",
+            paper_bgcolor="#0d1117",
+            plot_bgcolor="#0d1117",
             font=dict(color="#e6edf3", family="IBM Plex Mono"),
             yaxis=dict(title="Drawdown (%)", gridcolor="#21262d"),
             xaxis=dict(gridcolor="#21262d"),
@@ -493,37 +563,60 @@ if result is not None and df is not None:
         st.plotly_chart(fig_dd, use_container_width=True)
 
         # Risk metrics detail
-        st.markdown('<div class="section-label">Full Risk Metrics</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-label">Full Risk Metrics</div>', unsafe_allow_html=True
+        )
         display_metrics = {k: v for k, v in m.items() if not k.startswith("_")}
-        metric_rows = "".join([
-            f'<div class="metric-row"><span class="metric-key">{k}</span><span class="metric-val">{v}</span></div>'
-            for k, v in display_metrics.items()
-        ])
-        st.markdown(f'<div class="metric-table">{metric_rows}</div>', unsafe_allow_html=True)
+        metric_rows = "".join(
+            [
+                f'<div class="metric-row"><span class="metric-key">{k}</span><span class="metric-val">{v}</span></div>'
+                for k, v in display_metrics.items()
+            ]
+        )
+        st.markdown(
+            f'<div class="metric-table">{metric_rows}</div>', unsafe_allow_html=True
+        )
 
     with tabs[3]:
-        st.markdown('<div class="section-label">Monthly Returns Heatmap</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-label">Monthly Returns Heatmap</div>',
+            unsafe_allow_html=True,
+        )
         fig_heat = plot_monthly_returns_heatmap(equity_df)
         st.plotly_chart(fig_heat, use_container_width=True)
 
     with tabs[4]:
         trades_df = result.trades_df
-        st.markdown('<div class="section-label">Trade Ledger</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-label">Trade Ledger</div>', unsafe_allow_html=True
+        )
         if not trades_df.empty:
-            st.markdown(f"**{len(trades_df)} total orders** | "
-                        f"**{len(trades_df[trades_df['Side']=='BUY'])} buys** | "
-                        f"**{len(trades_df[trades_df['Side']=='SELL'])} sells**")
+            st.markdown(
+                f"**{len(trades_df)} total orders** | "
+                f"**{len(trades_df[trades_df['Side']=='BUY'])} buys** | "
+                f"**{len(trades_df[trades_df['Side']=='SELL'])} sells**"
+            )
             sells = trades_df[trades_df["Side"] == "SELL"].copy()
             if not sells.empty:
-                sells["PnL_Color"] = sells["PnL"].apply(lambda x: "🟢" if x > 0 else "🔴")
+                sells["PnL_Color"] = sells["PnL"].apply(
+                    lambda x: "🟢" if x > 0 else "🔴"
+                )
                 sells["PnL"] = sells["PnL"].map("${:,.2f}".format)
                 sells["Price"] = sells["Price"].map("${:,.2f}".format)
                 sells["Commission"] = sells["Commission"].map("${:,.2f}".format)
                 st.dataframe(
-                    sells[["Date", "Ticker", "Side", "Quantity", "Price",
-                           "Commission", "PnL", "PnL_Color"]].rename(
-                        columns={"PnL_Color": ""}
-                    ),
+                    sells[
+                        [
+                            "Date",
+                            "Ticker",
+                            "Side",
+                            "Quantity",
+                            "Price",
+                            "Commission",
+                            "PnL",
+                            "PnL_Color",
+                        ]
+                    ].rename(columns={"PnL_Color": ""}),
                     use_container_width=True,
                     height=400,
                 )
@@ -535,50 +628,72 @@ if result is not None and df is not None:
         feature_df = st.session_state.feature_df
 
         if ml_obj is not None and feature_df is not None:
-            st.markdown('<div class="section-label">ML Model Performance</div>', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="section-label">ML Model Performance</div>',
+                unsafe_allow_html=True,
+            )
 
             tm = ml_obj.train_metrics
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Walk-Forward Accuracy",
-                          f"{tm.get('walk_forward_acc', 0):.1%}",
-                          f"±{tm.get('walk_forward_std', 0):.1%}")
+                st.metric(
+                    "Walk-Forward Accuracy",
+                    f"{tm.get('walk_forward_acc', 0):.1%}",
+                    f"±{tm.get('walk_forward_std', 0):.1%}",
+                )
             with col2:
-                st.metric("Out-of-Sample Accuracy",
-                          f"{tm.get('oos_accuracy', 0):.1%}")
+                st.metric("Out-of-Sample Accuracy", f"{tm.get('oos_accuracy', 0):.1%}")
             with col3:
                 st.metric("Training Samples", f"{tm.get('n_train', 0):,}")
 
             # Fold accuracy chart
             fold_accs = tm.get("fold_accuracies", [])
             if fold_accs:
-                fig_folds = go.Figure(go.Bar(
-                    x=[f"Fold {i+1}" for i in range(len(fold_accs))],
-                    y=[a * 100 for a in fold_accs],
-                    marker_color="#00d4aa", opacity=0.8,
-                ))
-                fig_folds.add_hline(y=50, line_dash="dot", line_color="#555",
-                                    annotation_text="Random Baseline",
-                                    annotation_font_color="#8b949e")
+                fig_folds = go.Figure(
+                    go.Bar(
+                        x=[f"Fold {i+1}" for i in range(len(fold_accs))],
+                        y=[a * 100 for a in fold_accs],
+                        marker_color="#00d4aa",
+                        opacity=0.8,
+                    )
+                )
+                fig_folds.add_hline(
+                    y=50,
+                    line_dash="dot",
+                    line_color="#555",
+                    annotation_text="Random Baseline",
+                    annotation_font_color="#8b949e",
+                )
                 fig_folds.update_layout(
-                    paper_bgcolor="#0d1117", plot_bgcolor="#0d1117",
+                    paper_bgcolor="#0d1117",
+                    plot_bgcolor="#0d1117",
                     font=dict(color="#e6edf3", family="IBM Plex Mono"),
-                    yaxis=dict(title="Accuracy (%)", gridcolor="#21262d", range=[40, 80]),
+                    yaxis=dict(
+                        title="Accuracy (%)", gridcolor="#21262d", range=[40, 80]
+                    ),
                     xaxis=dict(gridcolor="#21262d"),
                     margin=dict(l=50, r=20, t=20, b=40),
                     height=250,
-                    title=dict(text="Walk-Forward Fold Accuracies",
-                               font=dict(color="#e6edf3", size=12)),
+                    title=dict(
+                        text="Walk-Forward Fold Accuracies",
+                        font=dict(color="#e6edf3", size=12),
+                    ),
                 )
                 st.plotly_chart(fig_folds, use_container_width=True)
 
             # Feature importance
-            st.markdown('<div class="section-label">Feature Importance</div>', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="section-label">Feature Importance</div>',
+                unsafe_allow_html=True,
+            )
             fig_fi = plot_feature_importance(ml_obj.feature_importances_)
             st.plotly_chart(fig_fi, use_container_width=True)
 
             # ML probability
-            st.markdown('<div class="section-label">Model Prediction Probabilities</div>', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="section-label">Model Prediction Probabilities</div>',
+                unsafe_allow_html=True,
+            )
             pred_df = ml_obj.get_prediction_df(feature_df)
             fig_prob = plot_ml_probability(pred_df)
             st.plotly_chart(fig_prob, use_container_width=True)
@@ -588,7 +703,8 @@ if result is not None and df is not None:
 
 else:
     # Welcome / empty state
-    st.markdown("""
+    st.markdown(
+        """
     <div style="
         border: 1px solid #21262d;
         border-radius: 12px;
@@ -623,4 +739,6 @@ else:
             </div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )

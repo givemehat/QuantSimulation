@@ -2,6 +2,7 @@
 Risk management layer.
 Handles position sizing, drawdown limits, and trade rejection logic.
 """
+
 import logging
 import numpy as np
 import pandas as pd
@@ -24,7 +25,7 @@ class RiskManager:
         max_drawdown_pct: float = 0.25,
         daily_loss_limit_pct: float = 0.03,
         volatility_scaling: bool = True,
-        vol_target: float = 0.15,        # annualized vol target
+        vol_target: float = 0.15,  # annualized vol target
     ):
         self.initial_capital = initial_capital
         self.max_position_pct = max_position_pct
@@ -61,7 +62,9 @@ class RiskManager:
             self._daily_start_equity = current_equity
             return True
 
-        daily_loss = (self._daily_start_equity - current_equity) / (self._daily_start_equity + 1e-9)
+        daily_loss = (self._daily_start_equity - current_equity) / (
+            self._daily_start_equity + 1e-9
+        )
         if daily_loss >= self.daily_loss_limit_pct:
             logger.warning(f"Daily loss limit {daily_loss:.1%} hit on {date}")
             return False
@@ -101,7 +104,9 @@ class RiskManager:
             return False
         loss = (entry - current_price) / (entry + 1e-9)
         if loss >= self.stop_loss_pct:
-            logger.info(f"Stop-loss triggered: {ticker} entry={entry:.2f} current={current_price:.2f}")
+            logger.info(
+                f"Stop-loss triggered: {ticker} entry={entry:.2f} current={current_price:.2f}"
+            )
             return True
         return False
 
@@ -112,7 +117,9 @@ class RiskManager:
             return False
         gain = (current_price - entry) / (entry + 1e-9)
         if gain >= self.take_profit_pct:
-            logger.info(f"Take-profit triggered: {ticker} entry={entry:.2f} current={current_price:.2f}")
+            logger.info(
+                f"Take-profit triggered: {ticker} entry={entry:.2f} current={current_price:.2f}"
+            )
             return True
         return False
 

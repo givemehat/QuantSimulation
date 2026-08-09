@@ -2,7 +2,9 @@
 Unit tests for QuantTerminal platform components.
 Run with: python -m pytest tests/ -v
 """
+
 import sys, os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
@@ -13,8 +15,10 @@ from data.synthetic import generate_synthetic_ohlcv, get_demo_data
 from data.ingestion import _validate_and_clean
 from features.engineering import compute_features, get_feature_columns
 from strategies.rule_based import (
-    MovingAverageCrossover, MomentumStrategy,
-    MeanReversionStrategy, BreakoutStrategy
+    MovingAverageCrossover,
+    MomentumStrategy,
+    MeanReversionStrategy,
+    BreakoutStrategy,
 )
 from strategies.ml_strategy import MLStrategy
 from portfolio.portfolio import Portfolio
@@ -33,6 +37,7 @@ def feature_df(sample_df):
 
 
 # ── Data Tests ────────────────────────────────────────────────────────────────
+
 
 class TestDataIngestion:
     def test_synthetic_shape(self, sample_df):
@@ -59,6 +64,7 @@ class TestDataIngestion:
 
 # ── Feature Tests ─────────────────────────────────────────────────────────────
 
+
 class TestFeatureEngineering:
     def test_feature_count(self, feature_df):
         feature_cols = get_feature_columns(feature_df)
@@ -83,6 +89,7 @@ class TestFeatureEngineering:
 
 
 # ── Strategy Tests ────────────────────────────────────────────────────────────
+
 
 class TestRuleBasedStrategies:
     def test_ma_crossover_signals(self, sample_df):
@@ -114,6 +121,7 @@ class TestRuleBasedStrategies:
 
 
 # ── Portfolio Tests ───────────────────────────────────────────────────────────
+
 
 class TestPortfolio:
     def test_initial_state(self):
@@ -154,24 +162,26 @@ class TestPortfolio:
 
 # ── Risk Manager Tests ────────────────────────────────────────────────────────
 
+
 class TestRiskManager:
     def test_position_sizing(self):
-        rm = RiskManager(initial_capital=100_000, max_position_pct=0.20,
-                         volatility_scaling=False)
+        rm = RiskManager(
+            initial_capital=100_000, max_position_pct=0.20, volatility_scaling=False
+        )
         qty = rm.size_position(100_000, 100.0)
         assert qty in (199, 200)  # 20% of 100k / $100 (int floor, float-safe)
 
     def test_stop_loss_trigger(self):
         rm = RiskManager(stop_loss_pct=0.05)
         rm.record_entry("AAPL", 100.0)
-        assert not rm.check_stop_loss("AAPL", 96.0)   # 4% loss — not triggered
-        assert rm.check_stop_loss("AAPL", 94.0)        # 6% loss — triggered
+        assert not rm.check_stop_loss("AAPL", 96.0)  # 4% loss — not triggered
+        assert rm.check_stop_loss("AAPL", 94.0)  # 6% loss — triggered
 
     def test_take_profit_trigger(self):
         rm = RiskManager(take_profit_pct=0.10)
         rm.record_entry("AAPL", 100.0)
         assert not rm.check_take_profit("AAPL", 108.0)  # 8% gain — not triggered
-        assert rm.check_take_profit("AAPL", 112.0)       # 12% gain — triggered
+        assert rm.check_take_profit("AAPL", 112.0)  # 12% gain — triggered
 
     def test_max_drawdown_halt(self):
         rm = RiskManager(initial_capital=100_000, max_drawdown_pct=0.25)
@@ -190,27 +200,31 @@ class TestRiskManager:
 
 # ── Backtest Tests ────────────────────────────────────────────────────────────
 
+
 class TestBacktestEngine:
     def test_backtest_runs(self, sample_df):
         strat = MovingAverageCrossover(fast=20, slow=50)
         sigs = strat.generate_signals(sample_df)
-        result = run_backtest(sample_df, strat, signals=sigs,
-                              initial_capital=100_000, ticker="TEST")
+        result = run_backtest(
+            sample_df, strat, signals=sigs, initial_capital=100_000, ticker="TEST"
+        )
         assert not result.equity_df.empty
         assert "equity" in result.equity_df.columns
 
     def test_equity_never_negative(self, sample_df):
         strat = MomentumStrategy(lookback=20)
         sigs = strat.generate_signals(sample_df)
-        result = run_backtest(sample_df, strat, signals=sigs,
-                              initial_capital=100_000, ticker="TEST")
+        result = run_backtest(
+            sample_df, strat, signals=sigs, initial_capital=100_000, ticker="TEST"
+        )
         assert (result.equity_df["equity"] >= 0).all()
 
     def test_metrics_computed(self, sample_df):
         strat = MovingAverageCrossover()
         sigs = strat.generate_signals(sample_df)
-        result = run_backtest(sample_df, strat, signals=sigs,
-                              initial_capital=100_000, ticker="TEST")
+        result = run_backtest(
+            sample_df, strat, signals=sigs, initial_capital=100_000, ticker="TEST"
+        )
         m = result.metrics
         assert "Total Return" in m
         assert "Sharpe Ratio" in m
@@ -220,8 +234,9 @@ class TestBacktestEngine:
         ml = MLStrategy(model_type="random_forest", horizon=5)
         ml.fit(feature_df)
         sigs = ml.generate_signals(feature_df).reindex(sample_df.index).fillna(0)
-        result = run_backtest(sample_df, ml, signals=sigs,
-                              initial_capital=100_000, ticker="TEST")
+        result = run_backtest(
+            sample_df, ml, signals=sigs, initial_capital=100_000, ticker="TEST"
+        )
         assert not result.equity_df.empty
         assert isinstance(result.metrics.get("_sharpe"), float)
 

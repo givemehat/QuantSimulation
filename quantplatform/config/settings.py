@@ -1,6 +1,7 @@
 """
 Platform-wide configuration and default parameters.
 """
+
 from dataclasses import dataclass, field
 from typing import List, Optional
 
@@ -16,18 +17,18 @@ class DataConfig:
 
 @dataclass
 class RiskConfig:
-    max_position_pct: float = 0.20        # max 20% of portfolio per trade
-    stop_loss_pct: float = 0.05           # 5% stop loss
-    take_profit_pct: float = 0.15         # 15% take profit
-    max_drawdown_pct: float = 0.25        # halt trading at 25% drawdown
-    daily_loss_limit_pct: float = 0.03    # 3% daily loss limit
+    max_position_pct: float = 0.20  # max 20% of portfolio per trade
+    stop_loss_pct: float = 0.05  # 5% stop loss
+    take_profit_pct: float = 0.15  # 15% take profit
+    max_drawdown_pct: float = 0.25  # halt trading at 25% drawdown
+    daily_loss_limit_pct: float = 0.03  # 3% daily loss limit
     volatility_scaling: bool = True
 
 
 @dataclass
 class ExecutionConfig:
-    slippage_bps: float = 5.0            # 5 basis points slippage
-    commission_pct: float = 0.001        # 0.1% commission
+    slippage_bps: float = 5.0  # 5 basis points slippage
+    commission_pct: float = 0.001  # 0.1% commission
     initial_capital: float = 100_000.0
 
 
@@ -38,7 +39,7 @@ class MLConfig:
     n_estimators: int = 200
     random_state: int = 42
     walk_forward_windows: int = 5
-    prediction_horizon: int = 5           # days ahead to predict
+    prediction_horizon: int = 5  # days ahead to predict
 
 
 @dataclass

@@ -2,6 +2,7 @@
 Market data ingestion, validation, preprocessing, and caching.
 Designed as a swappable data service abstraction.
 """
+
 import logging
 import os
 from pathlib import Path
@@ -44,16 +45,24 @@ def fetch_ohlcv(
 
     logger.info(f"Fetching {ticker} from {start} to {end} [{interval}]")
     try:
-        raw = yf.download(ticker, start=start, end=end, interval=interval,
-                          auto_adjust=True, progress=False)
+        raw = yf.download(
+            ticker,
+            start=start,
+            end=end,
+            interval=interval,
+            auto_adjust=True,
+            progress=False,
+        )
     except Exception as e:
         logger.warning(f"yfinance failed ({e}), falling back to synthetic data")
         from data.synthetic import get_demo_data
+
         return get_demo_data(ticker, start, end)
 
     if raw.empty:
         logger.warning(f"Empty response for {ticker}, falling back to synthetic data")
         from data.synthetic import get_demo_data
+
         return get_demo_data(ticker, start, end)
 
     df = _validate_and_clean(raw, ticker)
@@ -101,19 +110,27 @@ def _validate_and_clean(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
         df[col] = df[col].astype(float)
     df["Volume"] = df["Volume"].astype(float)
 
-    logger.info(f"Validated {ticker}: {len(df)} rows from {df.index[0].date()} to {df.index[-1].date()}")
+    logger.info(
+        f"Validated {ticker}: {len(df)} rows from {df.index[0].date()} to {df.index[-1].date()}"
+    )
     return df
 
 
 def resample_ohlcv(df: pd.DataFrame, freq: str = "W") -> pd.DataFrame:
     """Resample OHLCV data to a lower frequency (W=weekly, M=monthly)."""
-    resampled = df.resample(freq).agg({
-        "Open": "first",
-        "High": "max",
-        "Low": "min",
-        "Close": "last",
-        "Volume": "sum",
-    }).dropna()
+    resampled = (
+        df.resample(freq)
+        .agg(
+            {
+                "Open": "first",
+                "High": "max",
+                "Low": "min",
+                "Close": "last",
+                "Volume": "sum",
+            }
+        )
+        .dropna()
+    )
     return resampled
 
 
@@ -133,8 +150,7 @@ def simulate_stream(df: pd.DataFrame, warmup: int = 50):
         }
 
 
-def fetch_multiple(tickers: list, start: str, end: str,
-                   interval: str = "1d") -> dict:
+def fetch_multiple(tickers: list, start: str, end: str, interval: str = "1d") -> dict:
     """Fetch OHLCV for a list of tickers. Returns dict of DataFrames."""
     result = {}
     for t in tickers:

@@ -2,6 +2,7 @@
 Feature engineering pipeline.
 All features are shifted by 1 bar to prevent look-ahead bias.
 """
+
 import logging
 import numpy as np
 import pandas as pd
@@ -53,7 +54,9 @@ def compute_features(df: pd.DataFrame, horizon: int = 5) -> pd.DataFrame:
     feat["bb_upper"] = bb_mid + 2 * bb_std
     feat["bb_lower"] = bb_mid - 2 * bb_std
     feat["bb_width"] = (feat["bb_upper"] - feat["bb_lower"]) / bb_mid
-    feat["bb_pct"] = (close - feat["bb_lower"]) / (feat["bb_upper"] - feat["bb_lower"] + 1e-9)
+    feat["bb_pct"] = (close - feat["bb_lower"]) / (
+        feat["bb_upper"] - feat["bb_lower"] + 1e-9
+    )
 
     # ── Volatility ────────────────────────────────────────────
     for w in [5, 10, 20, 60]:
@@ -64,7 +67,9 @@ def compute_features(df: pd.DataFrame, horizon: int = 5) -> pd.DataFrame:
         feat[f"mom_{w}d"] = close.pct_change(w)
 
     # ── Rolling z-score ───────────────────────────────────────
-    feat["zscore_20"] = (close - close.rolling(20).mean()) / (close.rolling(20).std() + 1e-9)
+    feat["zscore_20"] = (close - close.rolling(20).mean()) / (
+        close.rolling(20).std() + 1e-9
+    )
 
     # ── Volume features ───────────────────────────────────────
     feat["vol_ma_20"] = volume.rolling(20).mean()
@@ -72,18 +77,19 @@ def compute_features(df: pd.DataFrame, horizon: int = 5) -> pd.DataFrame:
     feat["log_volume"] = np.log(volume + 1)
 
     # ── ATR (Average True Range) ──────────────────────────────
-    tr = pd.concat([
-        high - low,
-        (high - close.shift(1)).abs(),
-        (low - close.shift(1)).abs()
-    ], axis=1).max(axis=1)
+    tr = pd.concat(
+        [high - low, (high - close.shift(1)).abs(), (low - close.shift(1)).abs()],
+        axis=1,
+    ).max(axis=1)
     feat["atr_14"] = tr.rolling(14).mean()
     feat["atr_pct"] = feat["atr_14"] / (close + 1e-9)
 
     # ── Price position in recent range ───────────────────────
     feat["high_20d"] = high.rolling(20).max()
     feat["low_20d"] = low.rolling(20).min()
-    feat["range_pct"] = (close - feat["low_20d"]) / (feat["high_20d"] - feat["low_20d"] + 1e-9)
+    feat["range_pct"] = (close - feat["low_20d"]) / (
+        feat["high_20d"] - feat["low_20d"] + 1e-9
+    )
 
     # ── Lagged features ───────────────────────────────────────
     for lag in [1, 2, 3, 5]:
@@ -96,8 +102,11 @@ def compute_features(df: pd.DataFrame, horizon: int = 5) -> pd.DataFrame:
     feat["fwd_return"] = fwd_return  # continuous target for analysis
 
     # ── Shift all signal features by 1 bar (anti-leakage) ────
-    signal_cols = [c for c in feat.columns if c not in
-                   ["Open", "High", "Low", "Close", "Volume", "target", "fwd_return"]]
+    signal_cols = [
+        c
+        for c in feat.columns
+        if c not in ["Open", "High", "Low", "Close", "Volume", "target", "fwd_return"]
+    ]
     feat[signal_cols] = feat[signal_cols].shift(1)
 
     # Drop NaN rows from rolling windows and horizon

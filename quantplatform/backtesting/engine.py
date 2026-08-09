@@ -2,6 +2,7 @@
 Backtesting engine: event-driven simulation with realistic trading assumptions.
 Integrates strategy signals → risk checks → order sizing → portfolio execution.
 """
+
 import logging
 from typing import Optional, Union
 import numpy as np
@@ -16,8 +17,13 @@ logger = logging.getLogger(__name__)
 
 
 class BacktestResult:
-    def __init__(self, equity_df: pd.DataFrame, trades_df: pd.DataFrame,
-                 signals: pd.Series, metrics: dict):
+    def __init__(
+        self,
+        equity_df: pd.DataFrame,
+        trades_df: pd.DataFrame,
+        signals: pd.Series,
+        metrics: dict,
+    ):
         self.equity_df = equity_df
         self.trades_df = trades_df
         self.signals = signals
@@ -99,8 +105,9 @@ def run_backtest(
 
         # Check stop-loss / take-profit for existing position
         if current_signal != 0:
-            if (risk.check_stop_loss(ticker, price) or
-                    risk.check_take_profit(ticker, price)):
+            if risk.check_stop_loss(ticker, price) or risk.check_take_profit(
+                ticker, price
+            ):
                 portfolio.close_all(date, {ticker: price})
                 risk.clear_entry(ticker)
                 current_signal = 0
@@ -116,7 +123,9 @@ def run_backtest(
             # Open new position
             if sig == 1:  # Long
                 if risk.check_daily_loss(equity, date):
-                    qty = risk.size_position(equity, price, vol if vol and not np.isnan(vol) else None)
+                    qty = risk.size_position(
+                        equity, price, vol if vol and not np.isnan(vol) else None
+                    )
                     if qty > 0:
                         portfolio.buy(date, ticker, qty, price)
                         risk.record_entry(ticker, price)
@@ -139,12 +148,15 @@ def run_backtest(
 
     metrics = compute_metrics(equity_df, trades_df, initial_capital)
 
-    logger.info(f"Backtest complete | Trades: {len(trades_df)} | Final equity: {equity_df['equity'].iloc[-1] if len(equity_df) > 0 else initial_capital:.2f}")
+    logger.info(
+        f"Backtest complete | Trades: {len(trades_df)} | Final equity: {equity_df['equity'].iloc[-1] if len(equity_df) > 0 else initial_capital:.2f}"
+    )
     return BacktestResult(equity_df, trades_df, signals, metrics)
 
 
-def compute_metrics(equity_df: pd.DataFrame, trades_df: pd.DataFrame,
-                    initial_capital: float) -> dict:
+def compute_metrics(
+    equity_df: pd.DataFrame, trades_df: pd.DataFrame, initial_capital: float
+) -> dict:
     """Compute institutional-grade performance metrics."""
     if equity_df.empty:
         return {}

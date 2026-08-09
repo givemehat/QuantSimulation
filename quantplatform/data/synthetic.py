@@ -2,6 +2,7 @@
 Synthetic OHLCV generator for demo mode and testing.
 Uses Geometric Brownian Motion (GBM) with realistic price dynamics.
 """
+
 import numpy as np
 import pandas as pd
 
@@ -11,8 +12,8 @@ def generate_synthetic_ohlcv(
     start: str = "2020-01-01",
     end: str = "2024-12-31",
     initial_price: float = 150.0,
-    annual_drift: float = 0.10,      # 10% annual drift
-    annual_vol: float = 0.25,        # 25% annual volatility
+    annual_drift: float = 0.10,  # 10% annual drift
+    annual_vol: float = 0.25,  # 25% annual volatility
     seed: int = 42,
 ) -> pd.DataFrame:
     """
@@ -23,7 +24,7 @@ def generate_synthetic_ohlcv(
     n = len(dates)
 
     dt = 1 / 252
-    drift = (annual_drift - 0.5 * annual_vol ** 2) * dt
+    drift = (annual_drift - 0.5 * annual_vol**2) * dt
     vol = annual_vol * np.sqrt(dt)
 
     # Generate log returns
@@ -49,15 +50,18 @@ def generate_synthetic_ohlcv(
     vol_base = 5_000_000
     volume = np.abs(np.random.lognormal(np.log(vol_base), 0.5, n))
     # Volume spikes on high-vol days
-    volume *= (1 + 3 * np.abs(log_returns) / vol)
+    volume *= 1 + 3 * np.abs(log_returns) / vol
 
-    df = pd.DataFrame({
-        "Open": open_prices,
-        "High": high,
-        "Low": low,
-        "Close": close,
-        "Volume": volume.astype(float),
-    }, index=dates)
+    df = pd.DataFrame(
+        {
+            "Open": open_prices,
+            "High": high,
+            "Low": low,
+            "Close": close,
+            "Volume": volume.astype(float),
+        },
+        index=dates,
+    )
 
     df.index.name = "Date"
     return df
@@ -69,8 +73,8 @@ DEMO_TICKERS = {
     "MSFT": dict(initial_price=220, annual_drift=0.22, annual_vol=0.25, seed=43),
     "GOOGL": dict(initial_price=1200, annual_drift=0.15, annual_vol=0.30, seed=44),
     "TSLA": dict(initial_price=200, annual_drift=0.30, annual_vol=0.60, seed=45),
-    "SPY":  dict(initial_price=300, annual_drift=0.12, annual_vol=0.18, seed=46),
-    "QQQ":  dict(initial_price=280, annual_drift=0.16, annual_vol=0.22, seed=47),
+    "SPY": dict(initial_price=300, annual_drift=0.12, annual_vol=0.18, seed=46),
+    "QQQ": dict(initial_price=280, annual_drift=0.16, annual_vol=0.22, seed=47),
     "NVDA": dict(initial_price=250, annual_drift=0.40, annual_vol=0.55, seed=48),
     "AMZN": dict(initial_price=140, annual_drift=0.20, annual_vol=0.32, seed=49),
 }
@@ -78,7 +82,8 @@ DEMO_TICKERS = {
 
 def get_demo_data(ticker: str, start: str, end: str) -> pd.DataFrame:
     """Return synthetic demo data for a ticker."""
-    params = DEMO_TICKERS.get(ticker.upper(), {
-        "initial_price": 100, "annual_drift": 0.12, "annual_vol": 0.25, "seed": 99
-    })
+    params = DEMO_TICKERS.get(
+        ticker.upper(),
+        {"initial_price": 100, "annual_drift": 0.12, "annual_vol": 0.25, "seed": 99},
+    )
     return generate_synthetic_ohlcv(ticker=ticker, start=start, end=end, **params)
